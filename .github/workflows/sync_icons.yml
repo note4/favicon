@@ -2,17 +2,17 @@ name: Sync Multi-Size Favicons
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 每天北京时间 08:00 运行
+    - cron: '0 0 * * *'
   push:
     paths:
-      - 'siteurl.txt'    # 仅当清单更新时运行
-  workflow_dispatch:     # 支持手动点击运行
+      - 'siteurl.txt'
+  workflow_dispatch:
 
 jobs:
   build-and-sync:
     runs-on: ubuntu-latest
     permissions:
-      contents: write    # 必须开启写入权限
+      contents: write
     
     steps:
       - name: Checkout
@@ -25,7 +25,9 @@ jobs:
           cache: 'pip'
 
       - name: Install Dependencies
-        run: pip install requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Downloader
         run: python update_favicons.py
@@ -36,10 +38,9 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add favicon/
           
-          # 检查是否有文件更新
           if git diff --cached --quiet; then
             echo "没有图标更新，跳过 Commit"
           else
             git commit -m "chore: 自动同步网站图标 $(date +'%Y-%m-%d')"
-            git push
+            git push origin main
           fi
