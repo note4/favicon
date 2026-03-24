@@ -6,89 +6,135 @@ layout: default
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Favicon CDN 托管库</title>
+    <title>Favicon 托管库</title>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; }
-        body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        header { margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-        h1 { font-size: 1.5rem; color: #0f172a; margin: 0; }
-        .update-time { font-size: 0.875rem; color: #64748b; margin-top: 5px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding-bottom: 50px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
         
-        /* 列表布局 */
-        .icon-list { display: flex; flex-direction: column; gap: 12px; }
+        /* 吸顶搜索栏 */
+        .search-wrapper { 
+            position: sticky; top: 0; z-index: 100; 
+            background: rgba(248, 250, 252, 0.9); 
+            backdrop-filter: blur(8px); padding: 15px 0; 
+            border-bottom: 1px solid transparent; transition: all 0.3s;
+        }
+        .search-wrapper.is-sticky { border-bottom-color: var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #searchInput { 
+            width: 100%; padding: 12px 20px; border-radius: 12px; 
+            border: 2px solid var(--border); font-size: 1rem; outline: none; transition: border-color 0.2s;
+        }
+        #searchInput:focus { border-color: var(--primary); }
+
+        .icon-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .icon-row { 
-            background: var(--card); 
-            padding: 12px 20px; 
-            border-radius: 10px; 
-            border: 1px solid var(--border); 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between;
-            transition: all 0.2s;
+            background: var(--card); padding: 12px 20px; border-radius: 12px; 
+            border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
         }
-        .icon-row:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .info-side { display: flex; align-items: center; gap: 15px; }
         
-        .info-side { display: flex; align-items: center; gap: 15px; flex: 1; }
-        .preview-box { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border-radius: 6px; }
+        /* 预览图点击效果 */
+        .preview-box { 
+            width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; 
+            background: #f1f5f9; border-radius: 8px; cursor: zoom-in; 
+        }
         .preview-box img { max-width: 32px; max-height: 32px; }
-        .domain-name { font-weight: 500; font-size: 0.95rem; color: #334155; }
 
-        /* 按钮组 */
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .domain-link { font-weight: 500; color: #334155; text-decoration: none; }
+        .domain-link:hover { color: var(--primary); text-decoration: underline; }
+
+        .btn-group { display: flex; gap: 6px; }
         .btn-size { 
-            text-decoration: none; 
-            font-size: 0.75rem; 
-            padding: 4px 10px; 
-            background: #fff; 
-            border: 1px solid var(--border); 
-            border-radius: 5px; 
-            color: #64748b; 
-            transition: all 0.2s;
+            text-decoration: none; font-size: 11px; padding: 4px 8px; 
+            background: #fff; border: 1px solid var(--border); border-radius: 4px; color: #64748b; 
         }
-        .btn-size:hover { 
-            background: var(--primary); 
-            color: #fff; 
-            border-color: var(--primary); 
-        }
+        .btn-size:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #ef4444; }
+        /* 灯箱样式 */
+        #lightbox { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+            z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out;
+        }
+        #lightbox img { max-width: 90%; max-height: 90%; background: white; padding: 20px; border-radius: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Favicon 静态托管库</h1>
-            <p class="update-time">最后更新: {{ "now" | date: "%Y-%m-%d %H:%M" }}</p>
-            <p>引用格式: <code>{{ site.url }}/favicon/{size}/{domain}.png</code></p>
-        </header>
 
-        <div class="icon-list">
-            {% comment %} 我们选择以 64px 目录作为基准来遍历域名清单 {% endcomment %}
-            {% for file in site.static_files %}
-                {% if file.path contains '/favicon/64/' %}
-                <div class="icon-row">
-                    <div class="info-side">
-                        <div class="preview-box">
-                            <img src="{{ site.baseurl }}{{ file.path }}" alt="icon">
-                        </div>
-                        <span class="domain-name">{{ file.name | replace: ".png", "" }}</span>
-                    </div>
+<div class="container">
+    <header>
+        <h1>Favicon 静态托管库</h1>
+        <p style="color: #64748b; font-size: 0.9rem;">共收录图标: <span id="count">0</span> | 更新: {{ "now" | date: "%Y-%m-%d" }}</p>
+    </header>
 
-                    <div class="btn-group">
-                        {% assign sizes = "32,64,128,256,512" | split: "," %}
-                        {% for s in sizes %}
-                        <a href="{{ site.baseurl }}/favicon/{{ s }}/{{ file.name }}" 
-                           class="btn-size" 
-                           target="_blank">
-                            {{ s }}px
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            {% endfor %}
-        </div>
+    <div class="search-wrapper" id="searchBar">
+        <input type="text" id="searchInput" placeholder="搜索域名 (如: github.com)..." oninput="filterIcons()">
     </div>
+
+    <div class="icon-list" id="iconList">
+        {% for file in site.static_files %}
+            {% if file.path contains '/favicon/64/' %}
+            <div class="icon-row" data-domain="{{ file.name | replace: '.png', '' }}">
+                <div class="info-side">
+                    <div class="preview-box" onclick="openLightbox('{{ site.baseurl }}/favicon/256/{{ file.name }}')">
+                        <img src="{{ site.baseurl }}{{ file.path }}" alt="icon">
+                    </div>
+                    <a href="https://{{ file.name | replace: '.png', '' }}" class="domain-link" target="_blank">
+                        {{ file.name | replace: ".png", "" }}
+                    </a>
+                </div>
+                <div class="btn-group">
+                    {% assign sizes = "32,64,128,256" | split: "," %}
+                    {% for s in sizes %}
+                    <a href="{{ site.baseurl }}/favicon/{{ s }}/{{ file.name }}" class="btn-size" target="_blank">{{ s }}px</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<div id="lightbox" onclick="this.style.display='none'">
+    <img id="lightboxImg" src="" alt="Large Icon">
+</div>
+
+<script>
+    // 搜索过滤
+    function filterIcons() {
+        const val = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('.icon-row');
+        let visibleCount = 0;
+        rows.forEach(row => {
+            const domain = row.getAttribute('data-domain');
+            if (domain.includes(val)) {
+                row.style.display = 'flex';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        document.getElementById('count').innerText = visibleCount;
+    }
+
+    // 灯箱显示 256px 图片
+    function openLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').style.display = 'flex';
+    }
+
+    // 处理吸顶阴影效果
+    window.addEventListener('scroll', () => {
+        const searchBar = document.getElementById('searchBar');
+        if (window.scrollY > 100) {
+            searchBar.classList.add('is-sticky');
+        } else {
+            searchBar.classList.remove('is-sticky');
+        }
+    });
+
+    // 初始化统计数量
+    document.getElementById('count').innerText = document.querySelectorAll('.icon-row').length;
+</script>
+
 </body>
 </html>
